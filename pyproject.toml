@@ -1,0 +1,27 @@
+[project]
+name = "mlcast-dataset-radklim"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Leif Denby", email = "leif@denby.eu"},
+]
+dependencies = [
+    "luigi>=3.5.2",
+    "requests>=2.32.3",
+    "tqdm>=4.67.0",
+    "loguru>=0.7.2",
+    "fsspec>=2024.10.0",
+    "xarray>=2024.10.0",
+    "kerchunk>=0.2.6",
+    "zarr>=2.18.3",
+    "dask>=2024.11.2",
+    "h5py>=3.12.1",
+    "ipdb>=0.13.13",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
