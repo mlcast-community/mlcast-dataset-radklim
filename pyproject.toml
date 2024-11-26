@@ -1,6 +1,6 @@
 [project]
 name = "mlcast-dataset-radklim"
-version = "0.1.0"
+version = "0.1.0+dev"
 description = "Default template for PDM package"
 authors = [
     {name = "Leif Denby", email = "leif@denby.eu"},
@@ -25,3 +25,11 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "rich-cli>=1.8.0",
+    "rich>=12.6.0",
+    "pre-commit>=4.0.1",
+]
