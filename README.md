@@ -69,6 +69,7 @@ All the luigi tasks for downloading and untarring the source netCDF files are in
 ```bash
 PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.source DownloadAllYearsTask --start-year 2010 --end-year 2022 --data-kind hourly
 PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.zarr WriteYearZarrTask --year 2021 --data-kind 5_minutes
+PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.zarr WriteZarrTask --start-year 2020 --end-year 2021 --data-kind 5_minutes
 ```
 
 To run with a single worker without using a luigi scheduler add `--local-scheduler` to the above commands.

@@ -74,10 +74,13 @@ class KerchunkTask(luigi.Task):
             for nc_file in netcdf_files:
                 with open(nc_file, "rb") as f:
                     h5chunks = kerchunk.hdf.SingleHdf5ToZarr(f, str(nc_file))
-                    references.append(h5chunks.translate())
+                    file_refs = h5chunks.translate()
+                    references.append(file_refs)
 
         # combine the references
-        mzz = kerchunk.combine.MultiZarrToZarr(references, concat_dims=["time"])
+        mzz = kerchunk.combine.MultiZarrToZarr(
+            references, concat_dims=["time"], identical_dims=["lat", "lon"]
+        )
         combined_references = mzz.translate()
 
         # Write the combined references to the output JSON file
@@ -119,7 +122,10 @@ class WriteZarrTask(luigi.Task):
         Specifies the output target for the Zarr file.
         """
         return luigi.LocalTarget(
-            DATA_PATH / "dst/zarr" / self.data_kind / f"{self.year}.zarr"
+            DATA_PATH
+            / "dst/zarr"
+            / self.data_kind
+            / f"{self.start_year}_{self.end_year}.zarr"
         )
 
     def run(self):
@@ -136,10 +142,10 @@ class WriteZarrTask(luigi.Task):
         )
 
         # add meta info about the zarr dataset creation
-        date = datetime.now().isoformat()
+        date = datetime.datetime.now().isoformat()
         version = __version__
         ds.attrs["zarr-creation"] = (
-            "created by mlcast_dataset_radklim "
+            "created with mlcast_dataset_radklim "
             f"(https://github.com/mlcast-community/mlcast-dataset-radklim) {version} on {date} "
             "by Leif Denby (lcd@dmi.dk)"
         )
