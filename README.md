@@ -67,9 +67,8 @@ data
 All the luigi tasks for downloading and untarring the source netCDF files are in [mlcast_dataset_radklim/source.py](mlcast_dataset_radklim/source.py). The tasks for converting the netCDF files to zarr are in [mlcast_dataset_radklim/zarr.py](mlcast_dataset_radklim/zarr.py). All the `luigi.Task` classes can be run with the `luigi` CLI, e.g.:
 
 ```bash
-PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.source DownloadAllYearsTask --start-year 2010 --end-year 2022 --data-kind hourly
-PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.zarr WriteYearZarrTask --year 2021 --data-kind 5_minutes
-PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.zarr WriteZarrTask --start-year 2020 --end-year 2021 --data-kind 5_minutes
+PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.source DownloadAllYearsTask --start-year 2010 --end-year 2022 --data-kind 5_minutes
+PYTHONPATH=`pwd`:$PYTHONPATH pdm run luigi --module mlcast_dataset_radklim.zarr WriteZarrTask --start-year 2020 --end-year 2021 --data-kind hourly
 ```
 
 To run with a single worker without using a luigi scheduler add `--local-scheduler` to the above commands.

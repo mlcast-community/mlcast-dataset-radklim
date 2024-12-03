@@ -123,8 +123,9 @@ class WriteZarrTask(luigi.Task):
         """
         return luigi.LocalTarget(
             DATA_PATH
-            / "dst/zarr"
+            / "dst"
             / self.data_kind
+            / "zarr"
             / f"{self.start_year}_{self.end_year}.zarr"
         )
 
