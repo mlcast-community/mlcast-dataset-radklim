@@ -8,11 +8,11 @@ hourly acc:      https://opendata.dwd.de/climate_environment/CDC/grids_germany/h
 - year 2021 is incorrect, use
                  https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz
 
-5-min rainrate:  https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/asc/2001/YW2017.002_200101_asc.tar
-- stored in monthly .tar files
-- one netCDF file per day
+5-min rainrate:  https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/netCDF/2001/YW2017.002_2001_netcdf.tar.gz
+- stored in yearly .tar.gz files
+- one netCDF file per day (2001/01/YW_2017.002_20010101.nc)
 - year 2021 is incorrect, use
-                 https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz
+                 https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/netCDF/supplement/YW2017.002_2021_netcdf_supplement.tar.gz
 
 """
 import tarfile
@@ -28,17 +28,20 @@ from .config import DATA_PATH
 BASE_URL_FORMAT = "https://opendata.dwd.de/climate_environment/CDC/grids_germany/{data_kind}/radolan/reproc/2017_002/netCDF/"
 
 HOURLY_URL_FORMAT = BASE_URL_FORMAT + "{year}/RW2017.002_{year}_netcdf.tar.gz"
-FIVE_MINUTES_URL_FORMAT = BASE_URL_FORMAT + "{year}/YW2017.002_{year}{month:02}_asc.tar"
+FIVE_MINUTES_URL_FORMAT = BASE_URL_FORMAT + "{year}/YW2017.002_{year}_netcdf.tar.gz"
 
 HOURLY_URL_SUPPLMENT_FORMAT = (
     BASE_URL_FORMAT + "supplement/RW2017.002_{year}_netcdf_supplement.tar.gz"
 )
 FIVE_MINUTES_URL_SUPPLMENT_FORMAT = (
-    BASE_URL_FORMAT + "supplement/YW2017.002_{year}_asc_supplement.tar.gz"
+    BASE_URL_FORMAT + "supplement/YW2017.002_{year}_netcdf_supplement.tar.gz"
 )
 
+YEAR_MIN = 2001
+YEAR_MAX = 2024
 
-def create_url(data_kind: str, year: int, month: int = None) -> str:
+
+def create_url(data_kind: str, year: int) -> str:
     """
     Create the URL for a given data kind and year.
 
@@ -56,7 +59,7 @@ def create_url(data_kind: str, year: int, month: int = None) -> str:
     if data_kind not in ["hourly", "5_minutes"]:
         raise ValueError(f"Invalid data kind: {data_kind}")
 
-    if year < 2001 or year > 2021:
+    if year < YEAR_MIN or year > YEAR_MAX:
         raise ValueError(f"Invalid year: {year}")
 
     if data_kind == "hourly":
@@ -65,16 +68,12 @@ def create_url(data_kind: str, year: int, month: int = None) -> str:
         else:
             return HOURLY_URL_FORMAT.format(data_kind=data_kind, year=year)
     elif data_kind == "5_minutes":
-        if month is None:
-            raise ValueError("Month must be specified for 5_minutes data.")
         if year == 2021:
             return FIVE_MINUTES_URL_SUPPLMENT_FORMAT.format(
                 data_kind=data_kind, year=year
             )
         else:
-            return FIVE_MINUTES_URL_FORMAT.format(
-                data_kind=data_kind, year=year, month=month
-            )
+            return FIVE_MINUTES_URL_FORMAT.format(data_kind=data_kind, year=year)
     else:
         raise ValueError(f"Invalid data kind: {data_kind}")
 
@@ -82,25 +81,22 @@ def create_url(data_kind: str, year: int, month: int = None) -> str:
 class DownloadTask(luigi.Task):
     """
     Task to download a source .tar.gz/.tar file for specific kind of data (hourly or 5_minutes)
-    for a given year (and month for 5_minutes data).
+    for a given year.
 
     Parameters
     ----------
     year : int
         The year for which the file should be downloaded.
-    month : int
-        The month for which the file should be downloaded (only for 5_minutes data).
     data_kind : str
         The kind of data to download. Either 'hourly' or '5_minutes'.
 
     """
 
     year = luigi.IntParameter()
-    month = luigi.IntParameter(default=None)
     data_kind = luigi.Parameter()
 
     def _url(self):
-        return create_url(data_kind=self.data_kind, year=self.year, month=self.month)
+        return create_url(data_kind=self.data_kind, year=self.year)
 
     def output(self):
         """
@@ -113,9 +109,14 @@ class DownloadTask(luigi.Task):
         """
         Downloads the file from the URL and saves it to the output target.
         """
-        url = create_url(data_kind="hourly", year=self.year, month=self.month)
+        url = create_url(data_kind=self.data_kind, year=self.year)
 
         response = requests.get(url, stream=True)
+        # check response status code
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to download file: {url} (status code: {response.status_code})"
+            )
         total_size = int(response.headers.get("content-length", 0))
         output_path = Path(self.output().path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -146,14 +147,7 @@ class UntarYearTask(luigi.Task):
         """
         Specifies the dependency on the DownloadTask.
         """
-        kwargs = dict(year=self.year, data_kind=self.data_kind)
-
-        if self.data_kind == "hourly":
-            months = [None]
-        elif self.data_kind == "5_minutes":
-            months = range(1, 13)
-
-        return [DownloadTask(month=month, **kwargs) for month in months]
+        return DownloadTask(year=self.year, data_kind=self.data_kind)
 
     def output(self):
         """
@@ -169,9 +163,17 @@ class UntarYearTask(luigi.Task):
         """
         output_path = Path(self.output().path)
         output_path.mkdir(parents=True, exist_ok=True)
-        for input_task in self.input():
+        input_task = self.input()
+
+        try:
             with tarfile.open(input_task.path, "r:gz") as tar:
                 tar.extractall(path=output_path)
+        except tarfile.ReadError as ex:
+            # delete the output directory if the tar file is not valid
+            output_path.rmdir()
+            raise Exception(
+                f"There was an error reading the tar file: {input_task.path}"
+            ) from ex
 
 
 class DownloadAllYearsTask(luigi.WrapperTask):

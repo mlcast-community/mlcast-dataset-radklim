@@ -162,4 +162,5 @@ cython_debug/
 #.idea/
 
 
-data/
+data
+uv.lock

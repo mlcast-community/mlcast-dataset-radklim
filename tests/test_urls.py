@@ -1,4 +1,5 @@
 import pytest
+import requests
 
 from mlcast_dataset_radklim.source import create_url
 
@@ -12,12 +13,12 @@ EXAMPLES = [
         "https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz",
     ),
     (
-        dict(data_kind="5_minutes", year=2001, month=1),
-        "https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/netCDF/2001/YW2017.002_200101_asc.tar",
+        dict(data_kind="5_minutes", year=2001),
+        "https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/netCDF/2001/YW2017.002_2001_netcdf.tar.gz",
     ),
     (
-        dict(data_kind="5_minutes", year=2021, month=1),
-        "https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/netCDF/supplement/YW2017.002_2021_asc_supplement.tar.gz",
+        dict(data_kind="5_minutes", year=2021),
+        "https://opendata.dwd.de/climate_environment/CDC/grids_germany/5_minutes/radolan/reproc/2017_002/netCDF/supplement/YW2017.002_2021_netcdf_supplement.tar.gz",
     ),
 ]
 
@@ -26,3 +27,6 @@ EXAMPLES = [
 def test_urls(input, expected_url):
     url = create_url(**input)
     assert url == expected_url
+
+    response = requests.head(url, allow_redirects=True, timeout=5)
+    assert response.status_code == 200

@@ -1,6 +1,6 @@
 [project]
 name = "mlcast-dataset-radklim"
-version = "0.1.0+dev"
+version = "0.1.0"
 description = "Default template for PDM package"
 authors = [
     {name = "Leif Denby", email = "leif@denby.eu"},
@@ -14,19 +14,23 @@ dependencies = [
     "xarray>=2024.10.0",
     "kerchunk>=0.2.6",
     "zarr>=2.18.3",
-    "dask>=2024.11.2",
+    "dask[distributed]>=2024.11.2",
     "h5py>=3.12.1",
     "ipdb>=0.13.13",
+    "setuptools>=78.1.0",
+    "bokeh>=3.7.2",
+    "netcdf4>=1.7.2",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 
-[tool.pdm]
-distribution = false
-
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8.3.3",
     "rich-cli>=1.8.0",
